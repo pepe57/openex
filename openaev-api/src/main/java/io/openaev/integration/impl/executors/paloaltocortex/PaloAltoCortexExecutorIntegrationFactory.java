@@ -1,6 +1,6 @@
-package io.openaev.integration.impl.executors.sentinelone;
+package io.openaev.integration.impl.executors.paloaltocortex;
 
-import static io.openaev.integration.impl.executors.sentinelone.SentinelOneExecutorIntegration.SENTINELONE_EXECUTOR_TYPE;
+import static io.openaev.integration.impl.executors.paloaltocortex.PaloAltoCortexExecutorIntegration.PALOALTOCORTEX_EXECUTOR_TYPE;
 
 import io.openaev.authorisation.HttpClientFactory;
 import io.openaev.config.cache.LicenseCacheManager;
@@ -9,12 +9,11 @@ import io.openaev.database.model.ConnectorInstance;
 import io.openaev.database.model.ConnectorType;
 import io.openaev.ee.EnterpriseEditionService;
 import io.openaev.executors.ExecutorService;
-import io.openaev.executors.sentinelone.config.SentinelOneExecutorConfig;
+import io.openaev.executors.paloaltocortex.config.PaloAltoCortexExecutorConfig;
 import io.openaev.integration.ComponentRequestEngine;
 import io.openaev.integration.Integration;
 import io.openaev.integration.IntegrationFactory;
 import io.openaev.integration.configuration.BaseIntegrationConfigurationBuilder;
-import io.openaev.integration.migration.SentinelOneExecutorConfigurationMigration;
 import io.openaev.rest.settings.PreviewFeature;
 import io.openaev.service.*;
 import io.openaev.service.catalog_connectors.CatalogConnectorService;
@@ -28,12 +27,9 @@ import org.springframework.stereotype.Service;
 @Service
 @Profile("!test")
 @Slf4j
-public class SentinelOneExecutorIntegrationFactory extends IntegrationFactory {
+public class PaloAltoCortexExecutorIntegrationFactory extends IntegrationFactory {
   private final ExecutorService executorService;
   private final ComponentRequestEngine componentRequestEngine;
-  private final ConnectorInstanceService connectorInstanceService;
-  private final CatalogConnectorService catalogConnectorService;
-  private final SentinelOneExecutorConfigurationMigration sentinelOneExecutorConfigurationMigration;
 
   private final AgentService agentService;
   private final EndpointService endpointService;
@@ -42,16 +38,17 @@ public class SentinelOneExecutorIntegrationFactory extends IntegrationFactory {
   private final LicenseCacheManager licenseCacheManager;
   private final ThreadPoolTaskScheduler taskScheduler;
   private final FileService fileService;
+  private final ConnectorInstanceService connectorInstanceService;
+  private final CatalogConnectorService catalogConnectorService;
   private final BaseIntegrationConfigurationBuilder baseIntegrationConfigurationBuilder;
 
   private final PreviewFeatureService previewFeatureService;
 
-  public SentinelOneExecutorIntegrationFactory(
+  public PaloAltoCortexExecutorIntegrationFactory(
       ConnectorInstanceService connectorInstanceService,
       CatalogConnectorService catalogConnectorService,
       ExecutorService executorService,
       ComponentRequestEngine componentRequestEngine,
-      SentinelOneExecutorConfigurationMigration sentinelOneExecutorConfigurationMigration,
       AgentService agentService,
       EndpointService endpointService,
       AssetGroupService assetGroupService,
@@ -67,7 +64,6 @@ public class SentinelOneExecutorIntegrationFactory extends IntegrationFactory {
     this.componentRequestEngine = componentRequestEngine;
     this.connectorInstanceService = connectorInstanceService;
     this.catalogConnectorService = catalogConnectorService;
-    this.sentinelOneExecutorConfigurationMigration = sentinelOneExecutorConfigurationMigration;
     this.agentService = agentService;
     this.endpointService = endpointService;
     this.assetGroupService = assetGroupService;
@@ -86,39 +82,39 @@ public class SentinelOneExecutorIntegrationFactory extends IntegrationFactory {
 
   @Override
   protected void runMigrations() throws Exception {
-    sentinelOneExecutorConfigurationMigration.migrate();
+    // No
   }
 
   @Override
   protected void insertCatalogEntry() throws Exception {
-    if (previewFeatureService.isFeatureEnabled(PreviewFeature.SENTINEL_ONE_EXECUTOR)) {
-      String logoFilename = "%s-logo.png".formatted(SENTINELONE_EXECUTOR_TYPE);
+    if (previewFeatureService.isFeatureEnabled(PreviewFeature.PALO_ALTO_CORTEX_EXECUTOR)) {
+      String logoFilename = "%s-logo.png".formatted(PALOALTOCORTEX_EXECUTOR_TYPE);
       fileService.uploadStream(
           FileService.CONNECTORS_LOGO_PATH,
           logoFilename,
-          getClass().getResourceAsStream("/img/icon-sentinelone.png"));
+          getClass().getResourceAsStream("/img/icon-paloaltocortex.png"));
       CatalogConnector connector = new CatalogConnector();
-      connector.setTitle("SentinelOne Executor");
-      connector.setSlug(SENTINELONE_EXECUTOR_TYPE);
+      connector.setTitle("Palo Alto Cortex Executor");
+      connector.setSlug(PALOALTOCORTEX_EXECUTOR_TYPE);
       connector.setLogoUrl(logoFilename);
       connector.setDescription(
           """
-                      With SentinelOne executor register your asset in OpenAEV and enable execution of OpenAEV scenarios through your SentinelOne instance.
+                      With Palo Alto Cortex executor register your asset in OpenAEV and enable execution of OpenAEV scenarios through your Palo Alto Cortex instance.
                       """);
       connector.setShortDescription(
-          "Enable execution of OpenAEV scenarios through your SentinelOne instance.");
+          "Enable execution of OpenAEV scenarios through your Palo Alto Cortex instance.");
       connector.setClassName(getClassName());
-      connector.setSubscriptionLink("https://www.sentinelone.com");
+      connector.setSubscriptionLink("https://www.paloaltonetworks.com/cortex/cortex-xdr");
       connector.setContainerType(ConnectorType.EXECUTOR);
       connector.setCatalogConnectorConfigurations(
-          new SentinelOneExecutorConfig().toCatalogConfigurationSet(connector));
+          new PaloAltoCortexExecutorConfig().toCatalogConfigurationSet(connector));
       catalogConnectorService.saveAll(List.of(connector));
     }
   }
 
   @Override
   public Integration spawn(ConnectorInstance instance) {
-    return new SentinelOneExecutorIntegration(
+    return new PaloAltoCortexExecutorIntegration(
         instance,
         connectorInstanceService,
         endpointService,
