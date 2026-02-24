@@ -18,6 +18,6 @@ public class OpenCTIConnectorRegisterPingJob implements Job {
 
   @Override
   public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
-     openCTIConnectorService.registerOrPingAllConnectors();
+    openCTIConnectorService.registerOrPingAllConnectors();
   }
 }
