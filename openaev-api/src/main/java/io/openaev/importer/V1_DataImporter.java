@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
+import io.openaev.context.TenantContext;
 import io.openaev.database.model.*;
 import io.openaev.database.model.Scenario.SEVERITY;
 import io.openaev.database.repository.*;
@@ -1136,7 +1137,8 @@ public class V1_DataImporter implements Importer {
                 enabled,
                 exercise.getId(),
                 dependsDuration,
-                content);
+                content,
+                TenantContext.getCurrentTenant());
           } else if (scenario != null) {
             injectRepository.importSaveForScenario(
                 injectId,
@@ -1149,7 +1151,8 @@ public class V1_DataImporter implements Importer {
                 enabled,
                 scenario.getId(),
                 dependsDuration,
-                content);
+                content,
+                TenantContext.getCurrentTenant());
           } else {
             injectRepository.importSaveStandAlone(
                 injectId,
@@ -1161,7 +1164,8 @@ public class V1_DataImporter implements Importer {
                 allTeams,
                 enabled,
                 dependsDuration,
-                content);
+                content,
+                TenantContext.getCurrentTenant());
           }
           baseIds.put(id, new BaseHolder(injectId));
           originalIds.add(id);
@@ -1272,15 +1276,15 @@ public class V1_DataImporter implements Importer {
   }
 
   /**
-   * Used to create a dummy injector to be able to import injector contract from the starterpack
-   * before the real contract is created by the real injector
+   * Used to create or get a dummy injector to be able to import injector contract from the
+   * starterpack before the real contract is created by the real injector
    *
    * @param importNode contract node
    * @return
    */
-  private Injector createDummyInjector(JsonNode importNode) {
+  private Injector createOrGetDummyInjector(JsonNode importNode) {
 
-    return injectorService.createDummyInjector(
+    return injectorService.createOrGetDummyInjector(
         importNode.get("injector_contract_injector_type").asText(),
         importNode.get("injector_contract_injector_type_name").asText());
   }
@@ -1297,7 +1301,7 @@ public class V1_DataImporter implements Importer {
     injectorContract.setId(importNode.get("injector_contract_id").textValue());
     injectorContract.setCustom(false);
     injectorContract.setContent(importNode.get("injector_contract_content").textValue());
-    injectorContract.setInjector(createDummyInjector(importNode));
+    injectorContract.setInjector(createOrGetDummyInjector(importNode));
     injectorContract.setConvertedContent((ObjectNode) importNode.get("convertedContent"));
     injectorContract.setExternalId(importNode.get("injector_contract_external_id").textValue());
     injectorContract.setLabels(
