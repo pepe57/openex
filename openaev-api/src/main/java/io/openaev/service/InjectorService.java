@@ -18,6 +18,7 @@ import io.openaev.injector_contract.Contract;
 import io.openaev.injector_contract.Contractor;
 import io.openaev.rest.catalog_connector.dto.ConnectorIds;
 import io.openaev.rest.domain.DomainService;
+import io.openaev.rest.exception.ElementNotFoundException;
 import io.openaev.rest.injector.form.InjectorCreateInput;
 import io.openaev.rest.injector.form.InjectorOutput;
 import io.openaev.rest.injector.response.InjectorConnection;
@@ -48,7 +49,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service("coreInjectorService")
 // TODO needs to be merged with integrations/InjectorService
 public class InjectorService extends AbstractConnectorService<Injector, InjectorOutput> {
-  private static final String DUMMY_SUFFIX = "_dummy";
+  public static final String DUMMY_SUFFIX = "_dummy";
 
   @Resource private RabbitmqConfig rabbitmqConfig;
   private final InjectorRepository injectorRepository;
@@ -142,13 +143,19 @@ public class InjectorService extends AbstractConnectorService<Injector, Injector
     }
   }
 
+  public Injector injector(String id) {
+    return injectorRepository
+        .findById(id)
+        .orElseThrow(() -> new ElementNotFoundException("Injector not found with id: " + id));
+  }
+
   /**
    * Check if a dummy injector exist for an injector type and delete it
    *
-   * @param injectorType
+   * @param injectorType to find dummy one
    */
   public void deleteDummyInjectorIfItExists(@NotBlank final String injectorType) {
-    injectorRepository.findById(injectorType + DUMMY_SUFFIX).ifPresent(injectorRepository::delete);
+    deleteDummyInjectorIfItExists(injectorType, null);
   }
 
   /**
@@ -255,7 +262,7 @@ public class InjectorService extends AbstractConnectorService<Injector, Injector
         injectorContractRepository.saveAll(injectorContracts);
 
         // delete the dummy injector if it was created when importing the starter pack
-        deleteDummyInjectorIfItExists(input.getType());
+        deleteDummyInjectorIfItExists(input.getType(), savedInjector);
       }
       InjectorConnection conn =
           new InjectorConnection(
@@ -415,23 +422,51 @@ public class InjectorService extends AbstractConnectorService<Injector, Injector
           dependencies,
           staticContracts);
     } else {
-      createNewBuiltinInjector(
-          id,
-          name,
-          contractor,
-          isCustomizable,
-          category,
-          executorCommands,
-          executorClearCommands,
-          isPayloads,
-          dependencies,
-          staticContracts);
+      Injector createdInjector =
+          createNewBuiltinInjector(
+              id,
+              name,
+              contractor,
+              isCustomizable,
+              category,
+              executorCommands,
+              executorClearCommands,
+              isPayloads,
+              dependencies,
+              staticContracts);
 
       // delete the dummy injector if it was created when importing the starter pack
-      deleteDummyInjectorIfItExists(contractor.getType());
+      deleteDummyInjectorIfItExists(contractor.getType(), createdInjector);
     }
 
     log.info("Successfully registered injector '{}' (type: {})", name, contractor.getType());
+  }
+
+  //  /**
+  //   * Found Injector by type
+  //   *
+  //   * @param type to find
+  //   * @return found injector
+  //   */
+  //  public Optional<Injector> findByType(@NotBlank String type) {
+  //    return this.injectorRepository.findByType(type);
+  //  }
+
+  private void deleteDummyInjectorIfItExists(
+      @NotBlank final String injectorType, final Injector newInjector) {
+    injectorRepository
+        .findById(injectorType + DUMMY_SUFFIX)
+        .ifPresent(
+            dummyInjector -> {
+              if (newInjector != null) {
+                List<InjectorContract> injectorContracts =
+                    injectorContractRepository.findInjectorContractsByInjector(dummyInjector);
+                injectorContracts.forEach(
+                    injectorContract -> injectorContract.setInjector(newInjector));
+                injectorContractRepository.saveAll(injectorContracts);
+              }
+              injectorRepository.delete(dummyInjector);
+            });
   }
 
   private void uploadInjectorIcon(Contractor contractor) {
@@ -531,7 +566,7 @@ public class InjectorService extends AbstractConnectorService<Injector, Injector
     return !contractDB.getCustom() && (!injector.isPayloads() || contractDB.getPayload() == null);
   }
 
-  private void createNewBuiltinInjector(
+  private Injector createNewBuiltinInjector(
       String id,
       String name,
       Contractor contractor,
@@ -566,6 +601,7 @@ public class InjectorService extends AbstractConnectorService<Injector, Injector
                         contract, savedInjector, isPayloads))
             .toList();
     injectorContractRepository.saveAll(injectorContracts);
+    return savedInjector;
   }
 
   private void applyBuiltinInjectorProperties(

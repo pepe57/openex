@@ -21,11 +21,7 @@ import static java.util.stream.Collectors.toList;
 import io.openaev.config.OpenAEVConfig;
 import io.openaev.context.TenantContext;
 import io.openaev.database.model.*;
-import io.openaev.database.repository.AssetAgentJobRepository;
-import io.openaev.database.repository.AssetGroupRepository;
-import io.openaev.database.repository.EndpointRepository;
-import io.openaev.database.repository.ExecutorRepository;
-import io.openaev.database.repository.TagRepository;
+import io.openaev.database.repository.*;
 import io.openaev.executors.model.AgentRegisterInput;
 import io.openaev.rest.asset.endpoint.form.EndpointInput;
 import io.openaev.rest.asset.endpoint.form.EndpointOutput;
@@ -43,13 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -555,6 +545,9 @@ public class EndpointService {
       if (!PALOALTOCORTEX_EXECUTOR_TYPE.equals(input.getExecutor().getType())) {
         endpoint.setArch(input.getArch());
       }
+    }
+    if (!PALOALTOCORTEX_EXECUTOR_TYPE.equals(input.getExecutor().getType())) {
+      endpoint.setArch(input.getArch());
     }
     endpoint.setIps(EndpointMapper.mergeAddressArrays(endpoint.getIps(), input.getIps()));
     endpoint.setSeenIp(input.getSeenIp());
