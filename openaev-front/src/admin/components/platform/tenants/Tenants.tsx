@@ -11,7 +11,7 @@ import { useQueryableWithLocalStorage } from '../../../../components/common/quer
 import { useFormatter } from '../../../../components/i18n';
 import PaginatedListLoader from '../../../../components/PaginatedListLoader';
 import { type TenantOutput } from '../../../../utils/api-types';
-import { Can } from '../../../../utils/permissions/PermissionsProvider';
+import { Can } from '../../../../utils/permissions/permissionsContext';
 import { ACTIONS, SUBJECTS } from '../../../../utils/permissions/types';
 import useTenants from './hooks/useTenants';
 import TenantCreate from './tenant/TenantCreate';
