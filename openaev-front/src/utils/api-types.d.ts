@@ -3223,6 +3223,7 @@ export interface FileDrop {
 }
 
 export interface Filter {
+  id: string;
   key: string;
   mode?: "and" | "or";
   operator?:
