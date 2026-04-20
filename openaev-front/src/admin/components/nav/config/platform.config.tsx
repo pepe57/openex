@@ -16,7 +16,6 @@ export const PLATFORM_PARAMETERS_ROUTE = `${PLATFORM_ROUTE}/${SETTINGS_PATH}`;
 export const PLATFORM_TENANTS_ROUTE = `${PLATFORM_ROUTE}/${TENANTS_PATH}`;
 
 const platformEntries = (ability: AppAbility): LeftMenuItem[] => {
-
   // Standard hooks
   const { t } = useFormatter();
   const { isValidated: isValidatedEnterpriseEdition } = useEnterpriseEdition();
