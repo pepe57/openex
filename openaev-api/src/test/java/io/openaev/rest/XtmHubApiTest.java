@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -60,7 +61,8 @@ public class XtmHubApiTest extends IntegrationTest {
                 put(XtmHubApi.XTMHUB_URI + "/register")
                     .content(asJsonString(input))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(csrf()))
             .andExpect(status().is2xxSuccessful())
             .andReturn()
             .getResponse()
@@ -102,6 +104,7 @@ public class XtmHubApiTest extends IntegrationTest {
     registerInput.setToken("token-to-delete");
     mvc.perform(
             put(XtmHubApi.XTMHUB_URI + "/register")
+                .with(csrf())
                 .content(asJsonString(registerInput))
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
@@ -131,7 +134,8 @@ public class XtmHubApiTest extends IntegrationTest {
             put(XtmHubApi.XTMHUB_URI + "/register")
                 .content(asJsonString(registerInput))
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON))
+                .accept(MediaType.APPLICATION_JSON)
+                .with(csrf()))
         .andExpect(status().is2xxSuccessful());
 
     // When
@@ -175,6 +179,7 @@ public class XtmHubApiTest extends IntegrationTest {
     // When: register under the custom tenant
     mvc.perform(
             put(XtmHubApi.XTMHUB_URI + "/register")
+                .with(csrf())
                 .content(asJsonString(input))
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON))
@@ -208,7 +213,8 @@ public class XtmHubApiTest extends IntegrationTest {
                 post(XtmHubApi.XTMHUB_URI + "/contact-us")
                     .content(asJsonString(input))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_JSON))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(csrf()))
             .andExpect(status().is2xxSuccessful())
             .andReturn()
             .getResponse()

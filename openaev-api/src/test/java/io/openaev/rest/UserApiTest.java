@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,6 +25,8 @@ import io.openaev.utils.fixtures.composers.OrganizationComposer;
 import io.openaev.utils.fixtures.composers.TagComposer;
 import io.openaev.utils.fixtures.composers.UserComposer;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,7 +86,8 @@ class UserApiTest extends IntegrationTest {
         mvc.perform(
                 post("/api/login")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(asJsonString(loginUserInput)))
+                    .content(asJsonString(loginUserInput))
+                    .with(csrf()))
             .andExpect(status().is2xxSuccessful())
             .andExpect(jsonPath("user_email").value(EMAIL));
       }
@@ -98,7 +102,8 @@ class UserApiTest extends IntegrationTest {
         mvc.perform(
                 post("/api/login")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(asJsonString(loginUserInput)))
+                    .content(asJsonString(loginUserInput))
+                    .with(csrf()))
             .andExpect(status().is4xxClientError());
       }
 
@@ -112,7 +117,8 @@ class UserApiTest extends IntegrationTest {
         mvc.perform(
                 post("/api/login")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(asJsonString(loginUserInput)))
+                    .content(asJsonString(loginUserInput))
+                    .with(csrf()))
             .andExpect(status().is2xxSuccessful())
             .andExpect(jsonPath("user_email").value(EMAIL));
       }
@@ -127,7 +133,8 @@ class UserApiTest extends IntegrationTest {
         mvc.perform(
                 post("/api/login")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(asJsonString(loginUserInput)))
+                    .content(asJsonString(loginUserInput))
+                    .with(csrf()))
             .andExpect(status().is2xxSuccessful())
             .andExpect(jsonPath("user_email").value(EMAIL));
       }
@@ -147,12 +154,24 @@ class UserApiTest extends IntegrationTest {
       mvc.perform(
               post("/api/reset")
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content(asJsonString(input)))
+                  .content(asJsonString(input))
+                  .with(csrf()))
           .andExpect(status().isOk());
 
       // -- ASSERT --
       ArgumentCaptor<List<User>> userCaptor = ArgumentCaptor.forClass(List.class);
-      verify(mailingService).sendEmail(anyString(), anyString(), userCaptor.capture());
+      // not ideal, but the actual reset happens in a background thread!
+      Awaitility.await()
+          .atMost(1, TimeUnit.SECONDS)
+          .until(
+              () -> {
+                try {
+                  verify(mailingService).sendEmail(anyString(), anyString(), userCaptor.capture());
+                  return true;
+                } catch (Exception e) {
+                  return false;
+                }
+              });
       assertEquals(EMAIL, userCaptor.getValue().get(0).getEmail());
     }
 
@@ -171,20 +190,53 @@ class UserApiTest extends IntegrationTest {
       mvc.perform(
               post("/api/reset")
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content(asJsonString(input)))
+                  .content(asJsonString(input))
+                  .with(csrf()))
           .andExpect(status().isOk());
+
+      // not ideal, but the actual reset happens in a background thread!
+      Awaitility.await()
+          .atMost(1, TimeUnit.SECONDS)
+          .until(
+              () -> {
+                try {
+                  ArgumentCaptor<List<User>> userCaptor = ArgumentCaptor.forClass(List.class);
+                  verify(mailingService, times(1))
+                      .sendEmail(anyString(), anyString(), userCaptor.capture());
+                  return true;
+                } catch (Exception e) {
+                  return false;
+                }
+              });
 
       mvc.perform(
               post("/api/reset")
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content(asJsonString(input)))
+                  .content(asJsonString(input))
+                  .with(csrf()))
           .andExpect(status().isOk());
+
+      // not ideal, but the actual reset happens in a background thread!
+      Awaitility.await()
+          .atMost(1, TimeUnit.SECONDS)
+          .until(
+              () -> {
+                try {
+                  ArgumentCaptor<List<User>> userCaptor = ArgumentCaptor.forClass(List.class);
+                  verify(mailingService, times(2))
+                      .sendEmail(anyString(), anyString(), userCaptor.capture());
+                  return true;
+                } catch (Exception e) {
+                  return false;
+                }
+              });
 
       // -- ASSERT --
       mvc.perform(
               post("/api/reset/" + firstToken)
                   .content(asJsonString(changePasswordInput))
-                  .contentType(MediaType.APPLICATION_JSON))
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .with(csrf()))
           // should be 401 Access Denied
           // but some black magic is changing the actual status code
           // see RestBehavior.java
@@ -206,13 +258,28 @@ class UserApiTest extends IntegrationTest {
       mvc.perform(
               post("/api/reset")
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content(asJsonString(input)))
+                  .content(asJsonString(input))
+                  .with(csrf()))
           .andExpect(status().isOk());
+
+      Awaitility.await()
+          .atMost(1, TimeUnit.SECONDS)
+          .until(
+              () -> {
+                try {
+                  ArgumentCaptor<List<User>> userCaptor = ArgumentCaptor.forClass(List.class);
+                  verify(mailingService).sendEmail(anyString(), anyString(), userCaptor.capture());
+                  return true;
+                } catch (Exception e) {
+                  return false;
+                }
+              });
 
       mvc.perform(
               post("/api/reset/" + firstToken)
                   .content(asJsonString(changePasswordInput))
-                  .contentType(MediaType.APPLICATION_JSON))
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .with(csrf()))
           // should be 401 Access Denied
           // but some black magic is changing the actual status code
           // see RestBehavior.java
@@ -225,7 +292,8 @@ class UserApiTest extends IntegrationTest {
       mvc.perform(
               post("/api/reset/" + firstToken)
                   .content(asJsonString(changePasswordInput))
-                  .contentType(MediaType.APPLICATION_JSON))
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .with(csrf()))
           // should be 401 Access Denied
           // but some black magic is changing the actual status code
           // see RestBehavior.java
@@ -244,7 +312,8 @@ class UserApiTest extends IntegrationTest {
       mvc.perform(
               post("/api/reset")
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content(asJsonString(input)))
+                  .content(asJsonString(input))
+                  .with(csrf()))
           .andExpect(status().isOk());
 
       // -- ASSERT --

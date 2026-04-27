@@ -2838,16 +2838,22 @@ export interface ExecutionTrace {
   execution_message: string;
   execution_status?:
     | "SUCCESS"
+    | "SUCCESS_WITH_CLEANUP_FAIL"
+    | "WARNING"
+    | "ACCESS_DENIED"
     | "ERROR"
-    | "MAYBE_PREVENTED"
     | "COMMAND_NOT_FOUND"
     | "COMMAND_CANNOT_BE_EXECUTED"
-    | "WARNING"
-    | "PARTIAL"
-    | "MAYBE_PARTIAL_PREVENTED"
+    | "PREREQUISITE_FAILED"
+    | "INVALID_USAGE"
+    | "TIMEOUT"
+    | "INTERRUPTED"
     | "ASSET_AGENTLESS"
     | "AGENT_INACTIVE"
-    | "INFO";
+    | "INFO"
+    | "PARTIAL"
+    | "MAYBE_PREVENTED"
+    | "MAYBE_PARTIAL_PREVENTED";
   /** @format date-time */
   execution_time?: string;
   execution_trace_id: string;
@@ -2880,16 +2886,22 @@ export interface ExecutionTraceOutput {
    */
   execution_status:
     | "SUCCESS"
+    | "SUCCESS_WITH_CLEANUP_FAIL"
+    | "WARNING"
+    | "ACCESS_DENIED"
     | "ERROR"
-    | "MAYBE_PREVENTED"
     | "COMMAND_NOT_FOUND"
     | "COMMAND_CANNOT_BE_EXECUTED"
-    | "WARNING"
-    | "PARTIAL"
-    | "MAYBE_PARTIAL_PREVENTED"
+    | "PREREQUISITE_FAILED"
+    | "INVALID_USAGE"
+    | "TIMEOUT"
+    | "INTERRUPTED"
     | "ASSET_AGENTLESS"
     | "AGENT_INACTIVE"
-    | "INFO";
+    | "INFO"
+    | "PARTIAL"
+    | "MAYBE_PREVENTED"
+    | "MAYBE_PARTIAL_PREVENTED";
   /** @format date-time */
   execution_time: string;
 }
@@ -3075,6 +3087,8 @@ export interface ExerciseSimple {
    * @format date-time
    */
   exercise_updated_at?: string;
+  /** Workflow ID associated with the simulation */
+  exercise_workflow_id?: string;
 }
 
 export interface ExerciseTeamPlayersEnableInput {
@@ -3455,6 +3469,7 @@ export interface HealthCheck {
     | "BODY"
     | "OPTIONAL_ARGS"
     | "MESSAGE"
+    | "SCOPE_DEFINITION"
     | "UNKNOWN";
 }
 
@@ -4094,9 +4109,9 @@ export interface InjectStatus {
   status_id?: string;
   status_name:
     | "SUCCESS"
+    | "PARTIAL"
     | "ERROR"
     | "MAYBE_PREVENTED"
-    | "PARTIAL"
     | "MAYBE_PARTIAL_PREVENTED"
     | "DRAFT"
     | "QUEUING"
@@ -4507,6 +4522,18 @@ export interface JsonApiDocumentResourceObject {
 
 export type JsonNode = any;
 
+export interface JwkOutput {
+  crv?: string;
+  key_ops?: string[];
+  kid?: string;
+  kty?: string;
+  x?: string;
+}
+
+export interface JwksOutput {
+  keys?: JwkOutput[];
+}
+
 export interface KillChainPhase {
   listened?: boolean;
   /** @format date-time */
@@ -4863,6 +4890,8 @@ export interface LoginUserInput {
    * @minLength 1
    */
   password: string;
+  /** The tenant ID the user is logging into (optional) */
+  tenantId?: string;
 }
 
 export interface Mitigation {
@@ -6584,6 +6613,7 @@ export interface RawPaginationScenario {
   scenario_tags?: string[];
   /** @format date-time */
   scenario_updated_at?: string;
+  scenario_workflow_id?: string;
 }
 
 export interface RawUser {
@@ -8625,10 +8655,10 @@ export interface WorkflowConfigurationInput {
    */
   workflow_configuration_max_attempts?: number;
   /**
-   * Seconds to wait between attempts (1–59).
+   * Seconds to wait between attempts (1–3540).
    * @format int64
    * @min 1
-   * @max 59
+   * @max 5940
    */
   workflow_configuration_max_temporal_rate_seconds?: number;
   /** Whether rate limiting is enabled. */
@@ -8641,9 +8671,9 @@ export interface WorkflowConfigurationInput {
   /** Whether the timeout feature is enabled. */
   workflow_configuration_timeout_enabled?: boolean;
   /**
-   * Total timeout in seconds for the attack workflow scenario (0–86400).
+   * Total timeout in seconds for the attack workflow scenario (60–86400).
    * @format int64
-   * @min 0
+   * @min 60
    * @max 86400
    */
   workflow_configuration_timeout_seconds?: number;
