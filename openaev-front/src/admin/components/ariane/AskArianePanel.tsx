@@ -1,5 +1,3 @@
-import '@filigran/chatbot/styles.css';
-
 import { type ChatMode, ChatPanel } from '@filigran/chatbot';
 import { Alert, SvgIcon } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
@@ -10,7 +8,9 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useFormatter } from '../../../components/i18n';
+import { api } from '../../../network';
 import useAuth from '../../../utils/hooks/useAuth';
+import installChatbotCsrf from './installChatbotCsrf';
 
 interface AskArianePanelProps {
   onClose: () => void;
@@ -59,19 +59,27 @@ const AskArianePanel: React.FC<AskArianePanelProps> = ({
   ];
 
   useEffect(() => {
-    fetch('/api/xtmone/chat/agents')
-      .then((response) => {
-        if (response.ok) {
-          setAgentFetchState('success');
-        } else if (response.status === 404) {
-          setAgentFetchState('no_agents');
-        } else {
+    installChatbotCsrf();
+    // Bootstrap the Spring Security XSRF-TOKEN cookie before the chatbot
+    // widget fires its first mutating request, so installChatbotCsrf can
+    // inject the X-XSRF-TOKEN header.
+    api().get('/csrf').catch(() => undefined).finally(() => {
+      // `credentials: 'include'` keeps this call consistent with the `withCredentials: true`
+      // axios instance and avoids 401/403 in cross-origin deployments.
+      fetch('/api/xtmone/chat/agents', { credentials: 'include' })
+        .then((response) => {
+          if (response.ok) {
+            setAgentFetchState('success');
+          } else if (response.status === 404) {
+            setAgentFetchState('no_agents');
+          } else {
+            setAgentFetchState('error');
+          }
+        })
+        .catch(() => {
           setAgentFetchState('error');
-        }
-      })
-      .catch(() => {
-        setAgentFetchState('error');
-      });
+        });
+    });
   }, []);
 
   useEffect(() => {

@@ -161,15 +161,19 @@ const TopBar: FunctionComponent = () => {
   const [navOpen, setNavOpen] = useState(
     localStorage.getItem('navOpen') === 'true',
   );
-  const [isArianeChatOpen, setIsArianeChatOpen] = useState(false);
   useEffect(() => {
     const sub = MESSAGING$.toggleNav.subscribe({ next: () => setNavOpen(localStorage.getItem('navOpen') === 'true') });
-    const chatSub = MESSAGING$.toggleArianeChat.subscribe({ next: () => setIsArianeChatOpen(prev => !prev) });
     return () => {
       sub.unsubscribe();
-      chatSub.unsubscribe();
     };
-  });
+  }, []);
+  const [isArianeChatOpen, setIsArianeChatOpen] = useState(false);
+  useEffect(() => {
+    const sub = MESSAGING$.toggleArianeChat.subscribe({ next: () => setIsArianeChatOpen(prev => !prev) });
+    return () => {
+      sub.unsubscribe();
+    };
+  }, []);
   const handleLogout = async () => {
     await dispatch(logout());
     window.location.href = '/';
